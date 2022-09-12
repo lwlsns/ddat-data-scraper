@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿
 ScrapeProfession();
 
 static void ScrapeProfession()
@@ -20,16 +19,20 @@ static void ScrapeProfession()
             {
                 if(!allSkillsAre1)
                 {
-                    Console.WriteLine(roleTitle.Replace(" ","-").Replace("---","-").ToLower());
-                    Console.WriteLine("submitter: " + roleTitle);
-                    Console.WriteLine("themes: # rated 1-5");
-                    foreach(KeyValuePair<string, int> kvp in skills)
-                    {
-                        Console.WriteLine("  " + kvp.Key + ": " + kvp.Value);
-                        skills[kvp.Key] = 1;
+                    string docPath = Directory.GetCurrentDirectory();
+
+                    
+                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, roleTitle.Replace(" ","-").Replace("---","-").ToLower())))
+                    {                     
+                        outputFile.WriteLine("submitter: " + roleTitle);
+                        outputFile.WriteLine("themes: # rated 1-5");
+                        foreach(KeyValuePair<string, int> kvp in skills)
+                        {
+                            outputFile.WriteLine("  " + kvp.Key + ": " + kvp.Value);
+                            skills[kvp.Key] = 1;
+                        }
                     }
-                    
-                    
+
                 }
                 roleTitle = aLine.Substring(aLine.IndexOf("\">")+2).Replace("</h2>","");
                 allSkillsAre1 = true;
