@@ -1,12 +1,60 @@
-﻿
-ScrapeProfession();
+﻿Dictionary<string, string> professions = GetAllProfessions();
+GetAllProfessionData(professions);
 
-static void ScrapeProfession()
+static Dictionary<string, string> GetAllProfessions()
+{
+    Dictionary<string, string> result = new Dictionary<string, string>();
+    HttpClient client = new HttpClient();
+    string page = client.GetStringAsync(@"https://www.gov.uk/government/collections/digital-data-and-technology-profession-capability-framework").Result;
+    StringReader strReader = new StringReader(page);
+    while(true)
+    {
+        string aLine = strReader.ReadLine();
+        if(aLine != null)
+        {
+            if(aLine.Contains("gem-c-document-list__item-title"))
+            {
+                int start = aLine.IndexOf("href=\"")+"href=\"".Length;
+                int end = aLine.IndexOf("\">");
+                string url = aLine.Substring(start, end-start);
+
+                start = aLine.IndexOf("\">")+"\">".Length;
+                end = aLine.IndexOf("</a>");
+                string title = aLine.Substring(start, end-start)
+                    .ToLower()
+                    .Replace(" ", "-")
+                    .Replace("(","")
+                    .Replace(")","");
+
+                result.Add(title, url);
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    
+    return result;
+}
+
+static void GetAllProfessionData(Dictionary<string, string> professions)
+{
+    foreach(KeyValuePair<string, string> kvp in professions)
+    {
+        ScrapeProfession(kvp.Key, kvp.Value);
+    }
+
+}
+
+static void ScrapeProfession(string professionTitle, string link)
 {
     HttpClient client = new HttpClient();
     Dictionary<string, int> skills = new Dictionary<string, int>();
-    
-    string page = client.GetStringAsync(@"https://www.gov.uk/guidance/development-operations-devops-engineer").Result;
+
+    Directory.CreateDirectory(professionTitle);
+
+    string page = client.GetStringAsync("https://www.gov.uk/" + link).Result;
     StringReader strReader = new StringReader(page);
     bool allSkillsAre1 = true;
     string roleTitle = ""; 
@@ -19,10 +67,10 @@ static void ScrapeProfession()
             {
                 if(!allSkillsAre1)
                 {
-                    string docPath = Directory.GetCurrentDirectory();
+                    string docPath = Directory.GetCurrentDirectory()+"/"+professionTitle;
 
                     
-                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, roleTitle.Replace(" ","-").Replace("---","-").ToLower())))
+                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, roleTitle.Replace(" ","-").Replace("---","-").ToLower() + ".yaml")))
                     {                     
                         outputFile.WriteLine("submitter: " + roleTitle);
                         outputFile.WriteLine("themes: # rated 1-5");
